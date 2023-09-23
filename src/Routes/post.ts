@@ -17,14 +17,14 @@ const pushDatabase = (data: object) => {
 postRouter.get("/getpost/:id", (req, res) => {
     const id = parseInt(req.params.id)
     if (isNaN(id)) {
-        res.json({
+        res.status(400).json({
             success: false,
         })
         return;
     }
     const post = getDatabase().find((o: any) => o.id == id)
     if (!post) {
-        res.json({
+        res.status(404).json({
             success: false
         })
         return

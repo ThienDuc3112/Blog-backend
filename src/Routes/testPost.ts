@@ -20,6 +20,25 @@ testPostRouter.get("/", async (req, res) => {
     }
 })
 
+// Get all preview
+testPostRouter.get("/previewall", async (req, res) => {
+    try {
+        const posts = await PostModel.find({}, { post: 0 })
+        res.status(200).json({
+            success: true,
+            data: [...posts as any].map(post => {
+                post.post = undefined
+                return post
+            })
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+})
+
 // Get one post
 testPostRouter.get("/:id", getPost, (req, res: IResponse) => {
     res.status(200).json({

@@ -3,7 +3,6 @@ import cors from "cors"
 import postRouter from "./Routes/post"
 import mongoose from "mongoose";
 import env from "dotenv"
-import testPostRouter from "./Routes/testPost";
 env.config()
 
 const app = express()
@@ -34,6 +33,5 @@ app.get("/", (req, res) => {
 })
 
 app.use("/post", postRouter)
-app.use("/testpost", testPostRouter)
 
 

@@ -1,63 +1,116 @@
-import { Router } from "express";
-import fs from "fs"
+import { NextFunction, Request, Response, Router } from "express";
+import PostModel from "../models/post";
+import { Document } from "mongoose";
 
-const postRouter = Router()
+const testPostRouter = Router()
 
-const getDatabase = () => {
-    return JSON.parse(fs.readFileSync("./database.json", "utf-8"))
-}
+// Get all post
+testPostRouter.get("/", async (req, res) => {
+    try {
+        const posts = await PostModel.find()
+        res.status(200).json({
+            success: true,
+            data: posts
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+})
 
-const pushDatabase = (data: object) => {
-    const currData = getDatabase()
-    currData.push(data)
-    fs.writeFileSync("./database.json", JSON.stringify(currData, null, 2))
-    return currData
-}
+// Get all preview
+testPostRouter.get("/previewall", async (req, res) => {
+    try {
+        const posts = await PostModel.find({}, { post: 0 })
+        res.status(200).json({
+            success: true,
+            data: [...posts as any].map(post => {
+                post.post = undefined
+                return post
+            })
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+})
 
-postRouter.get("/getpost/:id", (req, res) => {
-    const id = parseInt(req.params.id)
-    if (isNaN(id)) {
+// Get one post
+testPostRouter.get("/:id", getPost, (req, res: IResponse) => {
+    res.status(200).json({
+        success: true,
+        data: res.post
+    })
+})
+
+// Create a post
+testPostRouter.post("/:id", async (req, res) => {
+    try {
+        const post = new PostModel({ ...req.body, id: req.params.id })
+        await post.save()
+        res.status(201).json({ success: true })
+    } catch (error: any) {
         res.status(400).json({
             success: false,
+            errMessage: error.message
         })
-        return;
     }
-    const post = getDatabase().find((o: any) => o.id == id)
-    if (!post) {
-        res.status(404).json({
-            success: false
+})
+
+// Update a post
+testPostRouter.patch("/:id", getPost, async (req, res: IResponse) => {
+    try {
+        await res.post?.updateOne({ ...req.body })
+        res.json({ success: true })
+    } catch (error: any) {
+        res.status(500).json({
+            success: false,
+            message: error.message
         })
-        return
     }
-    res.json({
-        success: true,
-        data: post
-    })
 })
 
-postRouter.get("/allPreview", (req, res) => {
-    let data = getDatabase()
-    for (let i = 0; i < data.length; i++) {
-        data[i].post = undefined
+// Delete a post
+testPostRouter.delete("/:id", getPost, async (req, res: IResponse) => {
+    try {
+        await res.post?.deleteOne()
+        res.json({ success: true })
+    } catch (error: any) {
+        res.status(500).json({
+            success: true,
+            message: error.message
+        })
     }
-    res.json({
-        success: true,
-        data: data
-    })
 })
 
 
-postRouter.post("/newpost", (req, res) => {
-    const post = req.body
-    post.time = new Date()
-    const database = getDatabase()
-    post.id = database.length == 0 ? 0 : database[database.length - 1].id + 1
-    pushDatabase(post)
-    res.json({
-        success: true,
-        id: post.id,
-        data: post
-    })
-})
+// Middleware
+interface IResponse extends Response {
+    post?: Document
+}
 
-export default postRouter
+async function getPost(req: Request, res: IResponse, next: NextFunction) {
+    let post
+    try {
+        post = await PostModel.findOne({ id: req.params.id })
+        if (post === null) {
+            return res.status(404).json({
+                success: false,
+                message: "Cannot find post"
+            })
+        }
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+    res.post = post
+    next()
+}
+
+export default testPostRouter

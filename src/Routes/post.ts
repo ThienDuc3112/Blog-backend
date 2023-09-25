@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
 import PostModel from "../models/post";
 import { Document } from "mongoose";
+import { IAuthRequest, authenticate } from "./auth";
 
 const testPostRouter = Router()
 
@@ -48,8 +49,9 @@ testPostRouter.get("/:id", getPost, (req, res: IResponse) => {
 })
 
 // Create a post
-testPostRouter.post("/:id", async (req, res) => {
+testPostRouter.post("/:id", authenticate, async (req: IAuthRequest, res) => {
     try {
+        console.log(req.user)
         const post = new PostModel({ ...req.body, id: req.params.id })
         await post.save()
         res.status(201).json({ success: true })

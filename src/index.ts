@@ -3,6 +3,7 @@ import cors from "cors"
 import postRouter from "./Routes/post"
 import mongoose from "mongoose";
 import env from "dotenv"
+import { authRouter } from "./Routes/auth";
 env.config()
 
 const app = express()
@@ -19,19 +20,11 @@ db.once("open", () => {
     console.log("Connected to db")
 })
 
-
-app.listen(6969, () => {
-    console.log("Server listen on port 6969")
-})
-
-
-app.get("/", (req, res) => {
-    console.log("requested")
-    res.json({
-        success: true
-    })
-})
+app.listen(6969, () => { console.log("Server listen on port 6969") })
 
 app.use("/post", postRouter)
+app.use("/auth", authRouter)
+
+
 
 

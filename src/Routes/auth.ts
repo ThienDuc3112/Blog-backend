@@ -1,38 +1,78 @@
 import { NextFunction, Request, Response, Router } from "express";
 import jwt from "jsonwebtoken";
+import UserModel from "../models/user";
+import { compare, genSalt, hash } from "bcrypt";
 
 const authRouter = Router()
 
-let validRefreshToken: string[] = []
+// Register
+authRouter.post("/register", async (req, res) => {
+    const { username, password, email } = req.body
+    if (!username || !password || !email) {
+        return res.status(400).json({ success: false, message: "Incomplete user data" })
+    }
+
+    const salt = await genSalt(10)
+    const hashedPassword = await hash(password, salt)
+
+    const user = new UserModel({
+        username, email,
+        password: hashedPassword
+    })
+
+    user.save()
+        .then(() => { res.status(201).json({ success: true }) })
+        .catch((err) => { res.status(400).json({ success: false, message: err.message }) })
+})
 
 // Login
-authRouter.post("/login", (req, res) => {
+authRouter.post("/login", async (req, res) => {
+    if (!req.body.password) return res.status(400).json({ success: false, message: "Please provide a password" })
+
     const username = req.body.username
-    const user = { username }
+    const user = await UserModel.findOne({ username })
 
-    const accessToken = jwt.sign(user, process.env.AUTH_TOKEN as string, { expiresIn: "15s" })
-    const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN as string)
-    validRefreshToken.push(refreshToken)
+    if (user == null) return res.status(404).json({ success: false, message: "User not found" })
 
-    res.status(200).json({ success: true, data: { accessToken, refreshToken } })
+    if (!(await compare(req.body.password, user.password))) return res.status(401).json({ success: false, message: "Invalid password" })
+
+    const accessToken = jwt.sign(
+        { username: user.username },
+        process.env.AUTH_TOKEN as string,
+        { expiresIn: "15m" }
+    )
+    const refreshToken = jwt.sign(
+        { username: user.username },
+        process.env.REFRESH_TOKEN as string,
+        { expiresIn: '1d' }
+    )
+
+    res.status(200)
+        .cookie("token", accessToken, {
+            maxAge: 15 * 60 * 1000,
+            httpOnly: true
+        })
+        .cookie("refreshToken", refreshToken, {
+            maxAge: 24 * 3600 * 1000,
+            httpOnly: true
+        })
+        .json({ success: true })
 })
 
 // Refresh
-authRouter.post("/refresh", (req, res) => {
-    const token: string | null = req.body.token
-    if (token === null) return res.status(401).json({ success: false, message: "Please provide a token" })
-    if (!validRefreshToken.includes(token)) return res.status(401).json({ success: false, message: "Invalid token" })
+authRouter.get("/refresh", (req, res) => {
+    const token: string | null = req.cookies?.refreshToken
+    if (token === null) return res.status(401).json({ success: false, message: "You are not logged in" })
     jwt.verify(token, process.env.REFRESH_TOKEN as string, (err, data: any) => {
-        if (err) return res.status(401).json({ success: false, message: "Invalid token" })
-        const accessToken = jwt.sign({ username: data.username }, process.env.AUTH_TOKEN as string, { expiresIn: "15s" })
-        res.json({ success: true, data: { accessToken } })
+        if (err) return res.status(401).json({ success: false, message: "Invalid refresh token" })
+        const accessToken = jwt.sign({ username: data.username }, process.env.AUTH_TOKEN as string, { expiresIn: "15m" })
+        res.cookie("token", accessToken, { httpOnly: true, maxAge: 15 * 60 * 1000 }).json({ success: true })
     })
 })
 
 // Logout
 authRouter.post("/logout", (req, res) => {
-    validRefreshToken = validRefreshToken.filter((token) => token != req.body.token)
-    res.json({ success: true })
+    res.cookie("token", "", { httpOnly: true, maxAge: 0 }).cookie("refreshToken", "", { httpOnly: true, maxAge: 0 }).json({ success: true })
 })
 
 interface IAuthRequest extends Request {
@@ -43,9 +83,8 @@ interface IAuthRequest extends Request {
 }
 
 const authenticate = (req: IAuthRequest, res: Response, next: NextFunction) => {
-    const authHeader = (req.headers as any)["authorization"]
-    const token = authHeader && authHeader.split(" ")[1]
-    if (!token) return res.status(401).json({ success: false, message: "Please provide a authorization token" })
+    const token = req.cookies?.token
+    if (!token) return res.status(401).json({ success: false, message: "You are not logged in" })
     jwt.verify(token, process.env.AUTH_TOKEN as string, (err: any, user: any) => {
         if (err) return res.status(403).json({ success: false, message: "Invalid token" })
         req.user = user

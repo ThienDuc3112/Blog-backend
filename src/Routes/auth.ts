@@ -1,95 +1,12 @@
-import { NextFunction, Request, Response, Router } from "express";
-import jwt from "jsonwebtoken";
-import UserModel from "../models/user";
-import { compare, genSalt, hash } from "bcrypt";
+import { Router } from "express";
+import { authenticate, authenticateMiddleware, login, logout/**, refresh*/, register } from "../controller/auth";
 
 const authRouter = Router()
 
-// Register
-authRouter.post("/register", async (req, res) => {
-    const { username, password, email } = req.body
-    if (!username || !password || !email) {
-        return res.status(400).json({ success: false, message: "Incomplete user data" })
-    }
+authRouter.post("/register", register)
+authRouter.post("/login", login)
+// authRouter.get("/refresh", refresh)
+authRouter.get("/logout", logout)
+authRouter.get("/", authenticateMiddleware, authenticate)
 
-    const salt = await genSalt(10)
-    const hashedPassword = await hash(password, salt)
-
-    const user = new UserModel({
-        username, email,
-        password: hashedPassword
-    })
-
-    user.save()
-        .then(() => { res.status(201).json({ success: true }) })
-        .catch((err) => { res.status(400).json({ success: false, message: err.message }) })
-})
-
-// Login
-authRouter.post("/login", async (req, res) => {
-    if (!req.body.password) return res.status(400).json({ success: false, message: "Please provide a password" })
-
-    const username = req.body.username
-    const user = await UserModel.findOne({ username })
-
-    if (user == null) return res.status(404).json({ success: false, message: "User not found" })
-
-    if (!(await compare(req.body.password, user.password))) return res.status(401).json({ success: false, message: "Invalid password" })
-
-    const accessToken = jwt.sign(
-        { username: user.username },
-        process.env.AUTH_TOKEN as string,
-        { expiresIn: "15m" }
-    )
-    const refreshToken = jwt.sign(
-        { username: user.username },
-        process.env.REFRESH_TOKEN as string,
-        { expiresIn: '1d' }
-    )
-
-    res.status(200)
-        .cookie("token", accessToken, {
-            maxAge: 15 * 60 * 1000,
-            httpOnly: true
-        })
-        .cookie("refreshToken", refreshToken, {
-            maxAge: 24 * 3600 * 1000,
-            httpOnly: true
-        })
-        .json({ success: true })
-})
-
-// Refresh
-authRouter.get("/refresh", (req, res) => {
-    const token: string | null = req.cookies?.refreshToken
-    if (token === null) return res.status(401).json({ success: false, message: "You are not logged in" })
-    jwt.verify(token, process.env.REFRESH_TOKEN as string, (err, data: any) => {
-        if (err) return res.status(401).json({ success: false, message: "Invalid refresh token" })
-        const accessToken = jwt.sign({ username: data.username }, process.env.AUTH_TOKEN as string, { expiresIn: "15m" })
-        res.cookie("token", accessToken, { httpOnly: true, maxAge: 15 * 60 * 1000 }).json({ success: true })
-    })
-})
-
-// Logout
-authRouter.post("/logout", (req, res) => {
-    res.cookie("token", "", { httpOnly: true, maxAge: 0 }).cookie("refreshToken", "", { httpOnly: true, maxAge: 0 }).json({ success: true })
-})
-
-interface IAuthRequest extends Request {
-    user?: {
-        username: string
-        iat: number
-    }
-}
-
-const authenticate = (req: IAuthRequest, res: Response, next: NextFunction) => {
-    const token = req.cookies?.token
-    if (!token) return res.status(401).json({ success: false, message: "You are not logged in" })
-    jwt.verify(token, process.env.AUTH_TOKEN as string, (err: any, user: any) => {
-        if (err) return res.status(403).json({ success: false, message: "Invalid token" })
-        req.user = user
-        next()
-    })
-}
-
-export { authRouter, authenticate, IAuthRequest }
+export { authRouter }

@@ -8,7 +8,8 @@ interface IPost {
     isPublic: boolean
     time: Date
     readTime: number
-    id: string
+    id: string,
+    author: string
 }
 
 const postSchema = new mongoose.Schema<IPost>({
@@ -46,6 +47,11 @@ const postSchema = new mongoose.Schema<IPost>({
         required: true,
         unique: true,
     },
+    author: {
+        type: String,
+        required: true,
+        default: "anonymous"
+    }
 })
 
 const PostModel = mongoose.model("Post", postSchema)

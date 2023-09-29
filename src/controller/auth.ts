@@ -44,7 +44,7 @@ const register = async (req: Request, res: Response) => {
 
     user.save()
         .then(() => { res.status(201).json({ success: true }) })
-        .catch((err) => { res.status(400).json({ success: false, message: err.message }) })
+        .catch((err) => { res.status(500).json({ success: false, message: err.message }) })
 }
 
 const login = async (req: Request, res: Response) => {
@@ -60,7 +60,7 @@ const login = async (req: Request, res: Response) => {
     const accessToken = jwt.sign(
         { username: user.username },
         process.env.AUTH_TOKEN as string,
-        { expiresIn: "1d" }
+        { expiresIn: "6h" }
     )
     // const refreshToken = jwt.sign(
     //     { username: user.username },
@@ -71,7 +71,7 @@ const login = async (req: Request, res: Response) => {
     res.status(200)
         .cookie("token", accessToken, {
             // maxAge: 15 * 60 * 1000,
-            maxAge: 24 * 3600 * 1000,
+            maxAge: 6 * 3600 * 1000,
             httpOnly: true
         })
         // .cookie("refreshToken", refreshToken, {

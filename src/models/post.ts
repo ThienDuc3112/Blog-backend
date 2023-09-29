@@ -7,6 +7,7 @@ interface IPost {
     post: string
     isPublic: boolean
     time: Date
+    lastEdit: Date
     readTime: number
     id: string,
     author: string
@@ -51,6 +52,11 @@ const postSchema = new mongoose.Schema<IPost>({
         type: String,
         required: true,
         default: "anonymous"
+    },
+    lastEdit: {
+        type: Date,
+        required: true,
+        default: new Date()
     }
 })
 

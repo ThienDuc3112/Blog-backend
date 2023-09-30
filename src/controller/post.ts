@@ -65,7 +65,6 @@ const getOnePost = (req: Request, res: IResponse) => {
 
 const createPost = async (req: IAuthRequest, res: Response) => {
     try {
-        console.log(req.user)
         const post = new PostModel({ ...req.body, id: req.params.id })
         await post.save()
         res.status(201).json({ success: true })

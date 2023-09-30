@@ -17,6 +17,7 @@ testPostRouter.patch("/:id",
     getPost,
     patchPost)                                      // Update a post
 testPostRouter.delete("/:id",
+    authenticateMiddleware,
     getPost,
     deletePost)                                     // Delete a post
 

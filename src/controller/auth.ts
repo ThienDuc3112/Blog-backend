@@ -73,7 +73,8 @@ const login = async (req: Request, res: Response) => {
             // maxAge: 15 * 60 * 1000,
             maxAge: 6 * 3600 * 1000,
             httpOnly: true,
-            sameSite: "none"
+            sameSite: "none",
+            secure: true
         })
         // .cookie("refreshToken", refreshToken, {
         //     maxAge: 24 * 3600 * 1000,

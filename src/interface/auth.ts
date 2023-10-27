@@ -1,10 +1,10 @@
-import { Request } from "express"
+import { Request } from "express";
 
 interface IAuthRequest extends Request {
-    user?: {
-        username: string
-        iat: number
-    }
+  user?: {
+    username: string;
+    iat: number;
+  };
 }
 
-export { IAuthRequest }
+export { IAuthRequest };

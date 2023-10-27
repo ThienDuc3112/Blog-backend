@@ -1,8 +1,8 @@
-import { Response } from "express"
-import { Document } from "mongoose"
+import { Response } from "express";
+import { Document } from "mongoose";
 
 interface IResponse extends Response {
-    post?: Document
+  post?: Document;
 }
 
-export { IResponse }
+export { IResponse };

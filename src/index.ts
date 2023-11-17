@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import env from "dotenv";
 import { authRouter } from "./Routes/auth";
 import cookieParser from "cookie-parser";
+import commentRouter from "./Routes/comment";
 env.config();
 
 const app = express();
@@ -22,9 +23,9 @@ db.once("open", () => {
   console.log("Connected to db");
 });
 
-app.listen(6969, () => {
-  console.log("Server listen on port 6969");
-});
+const port = 6969;
+app.listen(port, () => console.log(`Server listen on port ${port}`));
 
 app.use("/post", postRouter);
 app.use("/auth", authRouter);
+app.use("/comment", commentRouter);

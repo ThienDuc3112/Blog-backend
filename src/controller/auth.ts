@@ -13,16 +13,6 @@ const option =
         secure: true,
       };
 
-// const refresh = (req: Request, res: Response) => {
-//     const token: string | null = req.cookies?.refreshToken
-//     if (token === null) return res.status(401).json({ success: false, message: "You are not logged in" })
-//     jwt.verify(token, process.env.REFRESH_TOKEN as string, (err, data: any) => {
-//         if (err) return res.status(403).json({ success: false, message: "Invalid refresh token" })
-//         const accessToken = jwt.sign({ username: data.username }, process.env.AUTH_TOKEN as string, { expiresIn: "15m" })
-//         res.cookie("token", accessToken, { httpOnly: true, maxAge: 15 * 60 * 1000 }).json({ success: true })
-//     })
-// }
-
 const authenticateMiddleware = (
   req: IAuthRequest,
   res: Response,
@@ -60,6 +50,7 @@ const register = async (req: Request, res: Response) => {
     username,
     email,
     password: hashedPassword,
+    role: [2, 3],
   });
 
   user
@@ -90,15 +81,10 @@ const login = async (req: Request, res: Response) => {
       .json({ success: false, message: "Invalid password" });
 
   const accessToken = jwt.sign(
-    { username: user.username },
+    { username: user.username, role: user.role },
     process.env.AUTH_TOKEN as string,
     { expiresIn: "6h" }
   );
-  // const refreshToken = jwt.sign(
-  //     { username: user.username },
-  //     process.env.REFRESH_TOKEN as string,
-  //     { expiresIn: '1d' }
-  // )
 
   res
     .status(200)
@@ -108,11 +94,7 @@ const login = async (req: Request, res: Response) => {
       httpOnly: true,
       ...(option as any),
     })
-    // .cookie("refreshToken", refreshToken, {
-    //     maxAge: 24 * 3600 * 1000,
-    //     httpOnly: true
-    // })
-    .json({ success: true });
+    .json({ success: true, role: user.role });
 };
 
 const logout = (req: Request, res: Response) => {

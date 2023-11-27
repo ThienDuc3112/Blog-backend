@@ -31,6 +31,22 @@ const authenticateMiddleware = (
   });
 };
 
+const nonReturnAuthMidware = (
+  req: IAuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const token = req.cookies?.token;
+  if (!token) {
+    next();
+    return;
+  }
+  jwt.verify(token, process.env.AUTH_TOKEN as string, (err: any, user: any) => {
+    if (!err) req.user = user;
+    next();
+  });
+};
+
 const authenticate = (req: IAuthRequest, res: Response) => {
   res.status(200).json({ success: true, data: req.user });
 };
@@ -109,6 +125,7 @@ const logout = (req: Request, res: Response) => {
 
 export {
   /**refresh, */ authenticateMiddleware,
+  nonReturnAuthMidware,
   register,
   login,
   logout,

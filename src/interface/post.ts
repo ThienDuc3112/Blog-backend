@@ -1,8 +1,21 @@
 import { Response } from "express";
 import { Document } from "mongoose";
 
-interface IResponse extends Response {
-  post?: Document;
+interface IPost {
+  title: string;
+  description: string;
+  tags: string[];
+  post: string;
+  isPublic: boolean;
+  time: Date;
+  lastEdit: Date;
+  readTime: number;
+  id: string;
+  author: string;
 }
 
-export { IResponse };
+interface IResponse extends Response {
+  post?: Document<unknown, {}, IPost>;
+}
+
+export { IResponse, IPost };

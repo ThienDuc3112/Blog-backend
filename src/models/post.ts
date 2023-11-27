@@ -1,17 +1,5 @@
 import mongoose from "mongoose";
-
-interface IPost {
-  title: string;
-  description: string;
-  tags: string[];
-  post: string;
-  isPublic: boolean;
-  time: Date;
-  lastEdit: Date;
-  readTime: number;
-  id: string;
-  author: string;
-}
+import { IPost } from "../interface/post";
 
 const postSchema = new mongoose.Schema<IPost>({
   title: {

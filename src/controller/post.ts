@@ -36,6 +36,39 @@ const getAllPreview = async (req: Request, res: Response) => {
   }
 };
 
+const getPreviewWithPerm = async (req: IAuthRequest, res: Response) => {
+  try {
+    const posts = await PostModel.find({}, { post: 0 });
+    if (!req.user) {
+      res.status(200).json({
+        success: true,
+        data: [...posts].filter((post) => post.isPublic),
+      });
+      return;
+    }
+    if (req.user.role.indexOf(0) >= 0) {
+      res.status(200).json({
+        success: true,
+        data: [...posts],
+      });
+      return;
+    }
+    res.status(200).json({
+      success: true,
+      data: [...posts].filter(
+        (post) =>
+          post.isPublic ||
+          post.author.toLowerCase() == req.user?.username.toLowerCase()
+      ),
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 const getPost = async function getPost(
   req: Request,
   res: IResponse,
@@ -116,4 +149,5 @@ export {
   createPost,
   patchPost,
   deletePost,
+  getPreviewWithPerm,
 };

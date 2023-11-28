@@ -25,7 +25,7 @@ testPostRouter.get(
   nonReturnAuthMidware,
   getTagPreviewWithPerm
 ); // Get tags preview with perm
-testPostRouter.get("/:id", getPost, getOnePost); // Get one post
+testPostRouter.get("/:id", getPost, nonReturnAuthMidware, getOnePost); // Get one post
 testPostRouter.post("/:id", authenticateMiddleware, createPost); // Create a post
 testPostRouter.patch("/:id", authenticateMiddleware, getPost, patchPost); // Update a post
 testPostRouter.delete("/:id", authenticateMiddleware, getPost, deletePost); // Delete a post

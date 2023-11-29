@@ -1,33 +1,36 @@
 import { Router } from "express";
 import {
-  authenticateMiddleware,
-  nonReturnAuthMidware,
+  authenticateMiddleware as authMW,
+  nonReturnAuthMidware as getUser,
 } from "../controller/auth";
 import {
   createPost,
   deletePost,
-  getAllPost,
-  getAllPreview,
   getOnePost,
   getPost,
-  getPreviewWithPerm,
-  getTagPreviewWithPerm,
+  getAllPreview,
+  getTagPreview,
   patchPost,
+  getAllPreviewWithPages,
 } from "../controller/post";
 
 const testPostRouter = Router();
 
-testPostRouter.get("/", getAllPost); // Get all post
-testPostRouter.get("/previewall", getAllPreview); // Get all preview
-testPostRouter.get("/preview", nonReturnAuthMidware, getPreviewWithPerm); // Get preview with perm
-testPostRouter.get(
-  "/preview/:tag",
-  nonReturnAuthMidware,
-  getTagPreviewWithPerm
-); // Get tags preview with perm
-testPostRouter.get("/:id", getPost, nonReturnAuthMidware, getOnePost); // Get one post
-testPostRouter.post("/:id", authenticateMiddleware, createPost); // Create a post
-testPostRouter.patch("/:id", authenticateMiddleware, getPost, patchPost); // Update a post
-testPostRouter.delete("/:id", authenticateMiddleware, getPost, deletePost); // Delete a post
+testPostRouter.get("/preview", getUser, getAllPreview); // Get preview with perm
+// testPostRouter.get(
+//   "/preview/:page",
+//   nonReturnAuthMidware,
+//   getAllPreviewWithPages
+// ); // Get preview with pages
+// testPostRouter.get(
+//   "/previewtag/:tag/:page",
+//   nonReturnAuthMidware,
+//   getAllPreviewWithPages
+// ); // Get preview with pages
+testPostRouter.get("/preview/:tag", getUser, getTagPreview); // Get tags preview with perm
+testPostRouter.get("/:id", getPost, getUser, getOnePost); // Get one post
+testPostRouter.post("/:id", authMW, createPost); // Create a post
+testPostRouter.patch("/:id", getUser, getPost, patchPost); // Update a post
+testPostRouter.delete("/:id", authMW, getPost, deletePost); // Delete a post
 
 export default testPostRouter;

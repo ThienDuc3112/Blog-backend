@@ -3,64 +3,33 @@ import PostModel from "../models/post";
 import { IResponse } from "../interface/post";
 import { IAuthRequest } from "../interface/auth";
 
-const getAllPost = async (req: Request, res: Response) => {
+const getAllPreviewWithPages = async (req: IAuthRequest, res: Response) => {
   try {
-    const posts = await PostModel.find();
-    res.status(200).json({
-      success: true,
-      data: posts,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-const getAllPreview = async (req: Request, res: Response) => {
-  try {
-    const posts = await PostModel.find({}, { post: 0 });
-    res.status(200).json({
-      success: true,
-      data: [...(posts as any)].map((post) => {
-        post.post = undefined;
-        return post;
-      }),
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-const getPreviewWithPerm = async (req: IAuthRequest, res: Response) => {
-  try {
-    const posts = await PostModel.find({}, { post: 0 });
+    const page = parseInt(req.params.page);
+    const postPerPage = 2;
+    if (isNaN(page) || page <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid page request",
+      });
+    }
+    const filter: any = {};
     if (!req.user) {
-      res.status(200).json({
-        success: true,
-        data: [...posts].filter((post) => post.isPublic),
-      });
-      return;
+      filter.isPublic = true;
+    } else if (!req.user.role.includes(0)) {
+      filter["$or"] = [{ isPublic: true }, { author: req.user.username }];
     }
-    if (req.user.role.indexOf(0) >= 0) {
-      res.status(200).json({
-        success: true,
-        data: [...posts],
-      });
-      return;
-    }
-    res.status(200).json({
+    const posts = await PostModel.find(filter, { post: 0 })
+      .sort({ lastEdit: -1, _id: 1 })
+      .skip((page - 1) * postPerPage)
+      .limit(postPerPage)
+      .exec();
+    const data = {
       success: true,
-      data: [...posts].filter(
-        (post) =>
-          post.isPublic ||
-          post.author.toLowerCase() == req.user?.username.toLowerCase()
-      ),
-    });
+      data: [...posts],
+    };
+    res.status(200).json(data);
+    return;
   } catch (error: any) {
     res.status(500).json({
       success: false,
@@ -69,35 +38,44 @@ const getPreviewWithPerm = async (req: IAuthRequest, res: Response) => {
   }
 };
 
-const getTagPreviewWithPerm = async (req: IAuthRequest, res: Response) => {
+const getAllPreview = async (req: IAuthRequest, res: Response) => {
   try {
-    const posts = await PostModel.find({}, { post: 0 });
+    const filter: any = {};
     if (!req.user) {
-      res.status(200).json({
-        success: true,
-        data: [...posts]
-          .filter((post) => post.isPublic)
-          .filter((post) => post.tags.includes(req.params.tag)),
-      });
-      return;
+      filter.isPublic = true;
+    } else if (!req.user.role.includes(0)) {
+      filter["$or"] = [{ isPublic: true }, { author: req.user.username }];
     }
-    if (req.user.role.indexOf(0) >= 0) {
-      res.status(200).json({
-        success: true,
-        data: [...posts].filter((post) => post.tags.includes(req.params.tag)),
-      });
-      return;
-    }
-    res.status(200).json({
+    const posts = await PostModel.find(filter, { post: 0 });
+    const data = {
       success: true,
-      data: [...posts]
-        .filter(
-          (post) =>
-            post.isPublic ||
-            post.author.toLowerCase() == req.user?.username.toLowerCase()
-        )
-        .filter((post) => post.tags.includes(req.params.tag)),
+      data: [...posts],
+    };
+    res.status(200).json(data);
+    return;
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
+  }
+};
+
+const getTagPreview = async (req: IAuthRequest, res: Response) => {
+  try {
+    const filter: any = { tags: req.params.tag };
+    if (!req.user) {
+      filter.isPublic = true;
+    } else if (!req.user.role.includes(0)) {
+      filter["$or"] = [{ isPublic: true }, { author: req.user.username }];
+    }
+    const posts = await PostModel.find(filter, { post: 0 });
+    const data = {
+      success: true,
+      data: [...posts],
+    };
+    res.status(200).json(data);
+    return;
   } catch (error: any) {
     res.status(500).json({
       success: false,
@@ -153,7 +131,8 @@ const createPost = async (req: IAuthRequest, res: Response) => {
     const post = new PostModel({
       ...req.body,
       id: req.params.id,
-      author: req.user?.username ?? "Anonymous",
+      author: req.user?.username ?? "anonymous",
+      readTime: Math.round(req.body.post.split(" ").length / 200),
     });
     await post.save();
     res.status(201).json({ success: true });
@@ -165,9 +144,23 @@ const createPost = async (req: IAuthRequest, res: Response) => {
   }
 };
 
-const patchPost = async (req: Request, res: IResponse) => {
+const patchPost = async (req: IAuthRequest, res: IResponse) => {
   try {
-    await res.post?.updateOne({ ...req.body });
+    if (
+      !req.user ||
+      (!req.user.role.includes(0) &&
+        req.user.username != (res.post as any).author)
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "You don't have the permission to edit this",
+      });
+    }
+    await res.post?.updateOne({
+      ...req.body,
+      lastEdit: new Date(),
+      readTime: Math.round(req.body.post.split(" ").length / 200),
+    });
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({
@@ -190,13 +183,12 @@ const deletePost = async (req: Request, res: IResponse) => {
 };
 
 export {
-  getAllPost,
-  getAllPreview,
   getPost,
   getOnePost,
   createPost,
   patchPost,
   deletePost,
-  getPreviewWithPerm,
-  getTagPreviewWithPerm,
+  getAllPreview,
+  getTagPreview,
+  getAllPreviewWithPages,
 };

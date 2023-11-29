@@ -13,11 +13,7 @@ const option =
         secure: true,
       };
 
-const authenticateMiddleware = (
-  req: IAuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
+const authMW = (req: IAuthRequest, res: Response, next: NextFunction) => {
   const token = req.cookies?.token;
   if (!token)
     return res
@@ -52,13 +48,17 @@ const authenticate = (req: IAuthRequest, res: Response) => {
 };
 
 const register = async (req: Request, res: Response) => {
-  const { username, password, email } = req.body;
+  let {
+    username,
+    password,
+    email,
+  }: { username: string; password: string; email: string } = req.body;
   if (!username || !password || !email) {
     return res
       .status(400)
       .json({ success: false, message: "Incomplete user data" });
   }
-
+  username = username.trim().toLowerCase();
   const salt = await genSalt(10);
   const hashedPassword = await hash(password, salt);
 
@@ -124,7 +124,7 @@ const logout = (req: Request, res: Response) => {
 };
 
 export {
-  /**refresh, */ authenticateMiddleware,
+  /**refresh, */ authMW as authenticateMiddleware,
   nonReturnAuthMidware,
   register,
   login,

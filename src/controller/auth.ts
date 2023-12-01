@@ -27,11 +27,7 @@ const authMW = (req: IAuthRequest, res: Response, next: NextFunction) => {
   });
 };
 
-const nonReturnAuthMidware = (
-  req: IAuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
+const getUser = (req: IAuthRequest, res: Response, next: NextFunction) => {
   const token = req.cookies?.token;
   if (!token) {
     next();
@@ -125,7 +121,7 @@ const logout = (req: Request, res: Response) => {
 
 export {
   /**refresh, */ authMW as authenticateMiddleware,
-  nonReturnAuthMidware,
+  getUser,
   register,
   login,
   logout,

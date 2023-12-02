@@ -1,16 +1,10 @@
 import { Schema, model } from "mongoose";
-
-interface IComment {
-  postId: string;
-  date: string;
-  message: string;
-  username: string;
-}
+import { IComment } from "../interface/comment";
 
 const commentSchema = new Schema<IComment>({
   date: {
-    type: String,
-    default: new Date().toDateString(),
+    type: Date,
+    default: new Date(),
   },
   postId: {
     type: String,

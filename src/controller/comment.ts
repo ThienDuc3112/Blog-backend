@@ -2,7 +2,7 @@ import { Response, Request } from "express";
 import CommentModel from "../models/comment";
 import { IAuthRequest } from "../interface/auth";
 
-const getCommentByPostID = async (req: Request, res: Response) => {
+export const getCommentByPostID = async (req: Request, res: Response) => {
   try {
     const posts = await CommentModel.find({ postId: req.params.id })
       .sort({
@@ -21,7 +21,7 @@ const getCommentByPostID = async (req: Request, res: Response) => {
   }
 };
 
-const postCommentToPost = async (req: IAuthRequest, res: Response) => {
+export const postCommentToPost = async (req: IAuthRequest, res: Response) => {
   try {
     if (
       !req.user ||
@@ -46,4 +46,19 @@ const postCommentToPost = async (req: IAuthRequest, res: Response) => {
   }
 };
 
-export { getCommentByPostID, postCommentToPost };
+export const deleteComment = async (req: IAuthRequest, res: Response) => {
+  const comment = await CommentModel.findById(req.body._id);
+  if (!comment) {
+    return res
+      .status(404)
+      .json({ success: false, message: "No comment found" });
+  }
+  if (
+    !req.user ||
+    (!req.user.role.includes(0) && req.user.username != comment.username)
+  ) {
+    return res.status(401).json({ success: false, message: "Forbidden" });
+  }
+  await comment.deleteOne({ _id: req.body._id });
+  return res.status(200).json({ success: true });
+};

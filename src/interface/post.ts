@@ -15,7 +15,7 @@ interface IPost {
 }
 
 interface IResponse extends Response {
-  post?: Document<unknown, {}, IPost>;
+  post?: Document<unknown, {}, IPost> & IPost;
 }
 
 export { IResponse, IPost };

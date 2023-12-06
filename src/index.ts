@@ -6,6 +6,7 @@ import env from "dotenv";
 import { authRouter } from "./Routes/auth";
 import cookieParser from "cookie-parser";
 import commentRouter from "./Routes/comment";
+import { createTransport } from "nodemailer";
 env.config();
 
 const app = express();
@@ -25,6 +26,14 @@ db.once("open", () => {
 
 const port = 6969;
 app.listen(port, () => console.log(`Server listen on port ${port}`));
+
+export const transporter = createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 app.use("/post", postRouter);
 app.use("/auth", authRouter);

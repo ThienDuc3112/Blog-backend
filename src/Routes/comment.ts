@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticateMiddleware } from "../controller/auth";
+import { authMW } from "../controller/auth";
 import {
   deleteComment,
   getCommentByPostID,
@@ -10,7 +10,7 @@ import { getPost } from "../controller/post";
 const commentRouter = Router();
 
 commentRouter.get("/:id", getCommentByPostID);
-commentRouter.post("/:id", authenticateMiddleware, getPost, postCommentToPost);
-commentRouter.delete("/", authenticateMiddleware, deleteComment);
+commentRouter.post("/:id", authMW, getPost, postCommentToPost);
+commentRouter.delete("/", authMW, deleteComment);
 
 export default commentRouter;

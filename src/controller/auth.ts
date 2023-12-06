@@ -4,6 +4,7 @@ import { IAuthRequest } from "../interface/auth";
 import { compare, genSalt, hash } from "bcrypt";
 import UserModel from "../models/user";
 import { config } from "dotenv";
+import { transporter } from "..";
 config();
 const option =
   process.env.PRODUCTION == "FALSE"
@@ -13,7 +14,11 @@ const option =
         secure: true,
       };
 
-const authMW = (req: IAuthRequest, res: Response, next: NextFunction) => {
+export const authMW = (
+  req: IAuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   const token = req.cookies?.token;
   if (!token)
     return res
@@ -27,7 +32,11 @@ const authMW = (req: IAuthRequest, res: Response, next: NextFunction) => {
   });
 };
 
-const getUser = (req: IAuthRequest, res: Response, next: NextFunction) => {
+export const getUser = (
+  req: IAuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
   const token = req.cookies?.token;
   if (!token) {
     next();
@@ -39,11 +48,11 @@ const getUser = (req: IAuthRequest, res: Response, next: NextFunction) => {
   });
 };
 
-const authenticate = (req: IAuthRequest, res: Response) => {
+export const authenticate = (req: IAuthRequest, res: Response) => {
   res.status(200).json({ success: true, data: req.user });
 };
 
-const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response) => {
   let {
     username,
     password,
@@ -63,26 +72,51 @@ const register = async (req: Request, res: Response) => {
     email,
     password: hashedPassword,
     role: [2, 3],
+    active: false,
+    verifyToken: (
+      Date.now() * 10000 +
+      Math.round(Math.random() * 1000)
+    ).toString(36),
   });
 
   user
     .save()
     .then(() => {
-      res.status(201).json({ success: true });
+      transporter.sendMail(
+        {
+          from: process.env.EMAIL,
+          to: user.email,
+          subject: "Duc's blog email verification",
+          text: `Click on this link to verify your email: ${
+            process.env.PRODUCTION == "FALSE"
+              ? `http://localhost:3000`
+              : `${process.env.BASE_URL}`
+          }/verify/${user.verifyToken}`,
+        },
+        (err, info) => {
+          if (!err) return res.status(201).json({ success: true });
+          user.deleteOne({ _id: user._id }).finally(() => {
+            return res.status(500).json({
+              success: false,
+              message: "Server cannot verify email right now",
+            });
+          });
+        }
+      );
     })
     .catch((err) => {
       res.status(500).json({ success: false, message: err.message });
     });
 };
 
-const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response) => {
   if (!req.body.password)
     return res
       .status(400)
       .json({ success: false, message: "Please provide a password" });
 
   const username = req.body.username;
-  const user = await UserModel.findOne({ username });
+  const user = await UserModel.findOne({ username, active: true });
 
   if (user == null)
     return res.status(404).json({ success: false, message: "User not found" });
@@ -109,7 +143,7 @@ const login = async (req: Request, res: Response) => {
     .json({ success: true, role: user.role });
 };
 
-const logout = (req: Request, res: Response) => {
+export const logout = (req: Request, res: Response) => {
   res
     .cookie("token", "", {
       httpOnly: true,
@@ -119,11 +153,23 @@ const logout = (req: Request, res: Response) => {
     .json({ success: true });
 };
 
-export {
-  /**refresh, */ authMW as authenticateMiddleware,
-  getUser,
-  register,
-  login,
-  logout,
-  authenticate,
+export const verify = async (req: Request, res: Response) => {
+  const user = await UserModel.findOne({
+    verifyToken: req.params.token,
+    active: false,
+  });
+  if (!user)
+    return res.status(404).json({ success: false, message: "No user found" });
+  user
+    .updateOne({
+      active: true,
+    })
+    .then(() => {
+      return res.status(200).json({ success: true });
+    })
+    .catch((err) => {
+      return res
+        .status(500)
+        .json({ success: false, message: "Cannot update user" });
+    });
 };

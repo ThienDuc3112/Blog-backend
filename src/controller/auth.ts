@@ -5,6 +5,7 @@ import { compare, genSalt, hash } from "bcrypt";
 import UserModel from "../models/user";
 import { config } from "dotenv";
 import { transporter } from "..";
+import { MongooseError } from "mongoose";
 config();
 const option =
   process.env.PRODUCTION == "FALSE"
@@ -105,6 +106,17 @@ export const register = async (req: Request, res: Response) => {
       );
     })
     .catch((err) => {
+      if (err.name == "MongoServerError" && err.code == 11000) {
+        const retVal = {
+          success: false,
+          message: "Duplicate field",
+          field: null as null | string[],
+        };
+        if (err.keyPattern) {
+          retVal.field = Object.keys(err.keyPattern);
+        }
+        return res.status(409).json(retVal);
+      }
       res.status(500).json({ success: false, message: err.message });
     });
 };

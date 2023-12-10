@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
-import postRouter from "./Routes/post";
+import postRouter from "./Routes/post/post";
 import mongoose from "mongoose";
 import env from "dotenv";
-import { authRouter } from "./Routes/auth";
+import { authRouter } from "./Routes/auth/auth";
 import cookieParser from "cookie-parser";
-import commentRouter from "./Routes/comment";
+import commentRouter from "./Routes/comment/comment";
 import { createTransport } from "nodemailer";
 env.config();
 

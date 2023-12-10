@@ -7,5 +7,15 @@ interface IAuthRequest extends Request {
     role: number[];
   };
 }
+export interface IUser {
+  username: string;
+  password: string;
+  email: string;
+  role: number[];
+  active: boolean;
+  verifyToken: string;
+  resetToken: string;
+  lastRequest: number;
+}
 
 export { IAuthRequest };

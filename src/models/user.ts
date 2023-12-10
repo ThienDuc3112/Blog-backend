@@ -1,13 +1,5 @@
 import { Schema, model } from "mongoose";
-
-interface IUser {
-  username: string;
-  password: string;
-  email: string;
-  role: number[];
-  active: boolean;
-  verifyToken?: string;
-}
+import { IUser } from "../interface/auth";
 
 const userSchema = new Schema<IUser>({
   username: {
@@ -37,6 +29,13 @@ const userSchema = new Schema<IUser>({
   verifyToken: {
     type: String,
     unique: true,
+  },
+  resetToken: {
+    type: String,
+    unique: true,
+  },
+  lastRequest: {
+    type: Number,
   },
 });
 

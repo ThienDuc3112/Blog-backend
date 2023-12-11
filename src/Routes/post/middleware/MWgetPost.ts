@@ -2,11 +2,11 @@ import { NextFunction, Request } from "express";
 import { IResponse } from "../../../interface/post";
 import PostModel from "../../../models/post";
 
-export const MWgetPost = async function getPost(
+export const MWgetPost = async (
   req: Request,
   res: IResponse,
   next: NextFunction
-) {
+) => {
   let post;
   try {
     post = await PostModel.findOne({ id: req.params.id });

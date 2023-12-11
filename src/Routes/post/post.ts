@@ -15,7 +15,7 @@ testPostRouter.get("/preview", MWgetUser, getPreview); // Get preview with pages
 testPostRouter.get("/preview/:tag", MWgetUser, getTagPreview); // Get tags preview with perm
 testPostRouter.get("/:id", MWgetPost, MWgetUser, getPost); // Get one post
 testPostRouter.post("/:id", MWauth, postPost); // Create a post
-testPostRouter.patch("/:id", MWgetUser, getPost, patchPost); // Update a post
-testPostRouter.delete("/:id", MWauth, getPost, deletePost); // Delete a post
+testPostRouter.patch("/:id", MWgetUser, MWgetPost, patchPost); // Update a post
+testPostRouter.delete("/:id", MWauth, MWgetPost, deletePost); // Delete a post
 
 export default testPostRouter;

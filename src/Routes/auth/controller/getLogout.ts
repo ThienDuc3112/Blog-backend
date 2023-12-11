@@ -16,5 +16,6 @@ export const getLogout = (req: Request, res: Response) => {
       maxAge: 0,
       ...(option as any),
     })
+    .status(200)
     .json({ success: true });
 };

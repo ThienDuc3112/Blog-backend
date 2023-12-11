@@ -7,10 +7,10 @@ export const postReset = async (req: Request, res: Response) => {
   if (!user) {
     return res.status(404).json({ success: false, message: "Email not found" });
   }
-  if (Date.now() - user.lastRequest < 1000 * 3600 * 24) {
+  if (Date.now() - user.lastRequest < 1000 * 3600) {
     return res.status(401).json({
       success: false,
-      message: "You've already reset in the last 24 hours",
+      message: "You've already reset in the last hour",
     });
   }
   transporter.sendMail(
@@ -24,9 +24,20 @@ export const postReset = async (req: Request, res: Response) => {
       if (!err) {
         user
           .updateOne({ lastRequest: Date.now() })
-          .finally(() => res.status(204).json());
+          .then(() => res.status(200).json({ success: true }))
+          .catch((err) =>
+            res
+              .status(200)
+              .json({
+                success: false,
+                message: "Email sent but lastRequest haven't update",
+              })
+          );
+        return;
       }
-      res.status(500).json({ success: false, message: "Cannot send email" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Cannot send email" });
     }
   );
 };

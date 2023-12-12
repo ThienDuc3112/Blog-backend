@@ -24,7 +24,7 @@ db.once("open", () => {
   console.log("Connected to db");
 });
 
-const port = 6969;
+const port = process.env.PORT ?? 6969;
 app.listen(port, () => console.log(`Server listen on port ${port}`));
 
 export const transporter = createTransport({

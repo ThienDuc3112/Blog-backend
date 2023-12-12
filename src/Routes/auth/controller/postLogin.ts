@@ -19,7 +19,10 @@ export const postLogin = async (req: Request, res: Response) => {
       .json({ success: false, message: "Please provide a password" });
 
   const username = req.body.username;
-  const user = await UserModel.findOne({ username, active: true });
+  const user = await UserModel.findOne({
+    $or: [{ username }, { email: username }],
+    active: true,
+  });
 
   if (user == null)
     return res.status(404).json({ success: false, message: "User not found" });
@@ -38,7 +41,6 @@ export const postLogin = async (req: Request, res: Response) => {
   res
     .status(200)
     .cookie("token", accessToken, {
-      // maxAge: 15 * 60 * 1000,
       maxAge: 6 * 3600 * 1000,
       httpOnly: true,
       ...(option as any),

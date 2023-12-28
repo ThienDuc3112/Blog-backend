@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { MWauth } from "../auth/middleware/MWauth";
 import { MWgetUser } from "../auth/middleware/MWgetUser";
 import { MWgetPost } from "./middleware/MWgetPost";
 import { getPreview } from "./controller/getPreview";
@@ -8,6 +7,7 @@ import { getPost } from "./controller/getPost";
 import { postPost } from "./controller/postPost";
 import { patchPost } from "./controller/patchPost";
 import { deletePost } from "./controller/deletePost";
+import { MWauth } from "../auth/middleware/MWauth";
 
 const testPostRouter = Router();
 

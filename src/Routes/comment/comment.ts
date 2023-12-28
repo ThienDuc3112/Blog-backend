@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { MWauth } from "../auth/middleware/MWauth";
 import { getComment } from "./controller/getComment";
 import { postComment } from "./controller/postComment";
 import { deleteComment } from "./controller/deleteComment";
 import { MWgetPost } from "../post/middleware/MWgetPost";
+import { MWauth } from "../auth/middleware/MWauth";
 
 const commentRouter = Router();
 

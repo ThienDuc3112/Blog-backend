@@ -4,13 +4,6 @@ import { compare } from "bcrypt";
 import { sign } from "jsonwebtoken";
 import { config } from "dotenv";
 config();
-const option =
-  process.env.PRODUCTION == "FALSE"
-    ? {}
-    : {
-        sameSite: "none",
-        secure: true,
-      };
 
 export const postLogin = async (req: Request, res: Response) => {
   if (!req.body.password)
@@ -38,12 +31,5 @@ export const postLogin = async (req: Request, res: Response) => {
     { expiresIn: "6h" }
   );
 
-  res
-    .status(200)
-    .cookie("token", accessToken, {
-      maxAge: 6 * 3600 * 1000,
-      httpOnly: true,
-      ...(option as any),
-    })
-    .json({ success: true, role: user.role });
+  res.status(200).json({ success: true, role: user.role, token: accessToken });
 };

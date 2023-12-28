@@ -5,7 +5,7 @@ const option =
   process.env.PRODUCTION == "FALSE"
     ? {}
     : {
-        sameSite: "none",
+        sameSite: "lax",
         secure: true,
       };
 
